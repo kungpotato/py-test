@@ -5,9 +5,8 @@ import plotly.graph_objects as go
 from ta.trend import SMAIndicator
 from ta.momentum import RSIIndicator
 
-# stock = 'AOT.BK'
+stock = 'PTT.BK'
 # stock = "BTC-USD"
-stock = 'META'
 
 # Download intraday data
 data = yf.download(tickers=stock, period='2y', interval='1d')
@@ -19,11 +18,11 @@ data['RSI'] = RSIIndicator(data['Close'], window=14).rsi()
 
 # Fundamental
 company_info = yf.Ticker(stock).info
-pe_ratio = company_info['trailingPE']
-data['P/E'] = pe_ratio
+pe_ratio = company_info['pegRatio']
+data['peg'] = pe_ratio
 
 # Define a signal (buy=1 , sell=-1, do nothing=0)
-data['long_entry'] = (data['SMA1'] > data['SMA2']) & (data['P/E'] < 15)
+data['long_entry'] = (data['SMA1'] > data['SMA2']) & (data['peg']<1)
 data['long_exit'] = (data['SMA1'] < data['SMA2'])
 data.loc[data['long_entry'], 'signal'] = 1
 data.loc[data['long_exit'], 'signal'] = -1
