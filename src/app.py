@@ -1,125 +1,94 @@
 import yfinance as yf
+import ta
 import pandas as pd
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-from ta.trend import SMAIndicator
-from ta.momentum import RSIIndicator
+import plotly.graph_objs as go
 
-stock = 'PTT.BK'
-# stock = "BTC-USD"
+# Download historical data as dataframe
+ticker = "AAPL"
+df = yf.download(ticker, interval='1d', period='1y')
 
-# Download intraday data
-data = yf.download(tickers=stock, period='2y', interval='1d')
+# Calculate the short-window simple moving average
+short_sma = 50
+df['SMA1'] = ta.trend.sma_indicator(df['Close'], window=short_sma)
 
-# Calculate moving average and RSI
-data['SMA1'] = SMAIndicator(data['Close'], window=40).sma_indicator()
-data['SMA2'] = SMAIndicator(data['Close'], window=120).sma_indicator()
-data['RSI'] = RSIIndicator(data['Close'], window=14).rsi()
+# Calculate the long-window simple moving average
+long_sma = 200
+df['SMA2'] = ta.trend.sma_indicator(df['Close'], window=long_sma)
 
-# Fundamental
-company_info = yf.Ticker(stock).info
-pe_ratio = company_info['pegRatio']
-data['peg'] = pe_ratio
+# Create a trace for the short-window simple moving average
+trace_sma1 = go.Scatter(
+    x=df.index,
+    y=df['SMA1'],
+    mode='lines',
+    name=f'SMA{short_sma}'
+)
 
-# Define a signal (buy=1 , sell=-1, do nothing=0)
-data['long_entry'] = (data['SMA1'] > data['SMA2']) & (data['peg']<1)
-data['long_exit'] = (data['SMA1'] < data['SMA2'])
-data.loc[data['long_entry'], 'signal'] = 1
-data.loc[data['long_exit'], 'signal'] = -1
+# Create a trace for the long-window simple moving average
+trace_sma2 = go.Scatter(
+    x=df.index,
+    y=df['SMA2'],
+    mode='lines',
+    name=f'SMA{long_sma}'
+)
 
-# Forward fill signals
-data['signal'].ffill(inplace=True)
+# Create a Candlestick trace
+trace_candle = go.Candlestick(
+    x=df.index,
+    open=df['Open'],
+    high=df['High'],
+    low=df['Low'],
+    close=df['Close'],
+    name='Candlestick'
+)
 
-# Calculate returns
-data['return'] = data['Close'].pct_change() * data['signal'].shift()
+# Define the entry points where short moving average crosses above long moving average
+df['Buy_Signal'] = (df['SMA1'] > df['SMA2']) & (
+    df['SMA1'].shift(1) < df['SMA2'].shift(1))
 
-# Calculate cumulative returns
-data['cumulative_return'] = (data['return'] + 1).cumprod()
+# Define the exit points where short moving average crosses below long moving average
+df['Sell_Signal'] = (df['SMA1'] < df['SMA2']) & (
+    df['SMA1'].shift(1) > df['SMA2'].shift(1))
 
-# Calculate drawdown
-data['cummax'] = data['cumulative_return'].cummax()
-data['drawdown'] = data['cummax'] - data['cumulative_return']
+# Create traces for the entry and exit points
+trace_buy = go.Scatter(
+    x=df[df['Buy_Signal']].index,
+    y=df[df['Buy_Signal']]['Close'],
+    mode='markers',
+    name='Buy',
+    marker=dict(
+        symbol='triangle-up',
+        color='green',
+        size=10
+    )
+)
 
-# Calculate risk-reward (assuming risk-free rate is 0)
-data['risk_reward'] = data['cumulative_return'] / data['drawdown'].where(data['drawdown'] != 0)
+trace_sell = go.Scatter(
+    x=df[df['Sell_Signal']].index,
+    y=df[df['Sell_Signal']]['Close'],
+    mode='markers',
+    name='Sell',
+    marker=dict(
+        symbol='triangle-down',
+        color='red',
+        size=10
+    )
+)
 
-# Show entries and exits
-data['entry'] = data['signal'] > 0
-data['exit'] = data['signal'] < 0
 
-# Plotting candlestick chart with entry and exit points
-fig = go.Figure(data=[go.Candlestick(x=data.index,
-                                     open=data['Open'], high=data['High'],
-                                     low=data['Low'], close=data['Close'])])
+data = [trace_candle, trace_sma1, trace_sma2, trace_buy, trace_sell]
 
-fig.add_trace(go.Scatter(x=data[data['entry']].index, y=data[data['entry']]['Close'],
-                         mode='markers', marker=dict(color='green', size=10), name='Entry'))
+layout = go.Layout(
+    title=f'{ticker} Candlestick with SMA',
+    xaxis=dict(title='Date'),
+    yaxis=dict(title='Price'),
+    showlegend=True,
+    legend=dict(
+        x=0,
+        y=1.0
+    ),
+    template='plotly_dark'
+)
 
-fig.add_trace(go.Scatter(x=data[data['exit']].index, y=data[data['exit']]['Close'],
-                         mode='markers', marker=dict(color='red', size=10), name='Exit'))
-
-fig.update_layout(title=f'{stock} Trading with SMA',
-                  xaxis_title='Date', yaxis_title='Price', template='plotly_dark')
+fig = go.Figure(data=data, layout=layout)
 
 fig.show()
-
-# summary statistics
-total_return = data['cumulative_return'].iloc[-1] - 1
-positive_return = data[data['return'] > 0]['return'].sum()
-negative_return = data[data['return'] < 0]['return'].sum()
-win_rate = len(data[data['return'] > 0]) / len(data[data['return'].notnull()])
-max_drawdown = data['drawdown'].max()
-average_risk_reward = data['risk_reward'].mean()
-
-# print(f'Total return: {total_return}')
-# print(f'Positive return: {positive_return}')
-# print(f'Negative return: {negative_return}')
-# print(f'Win rate: {win_rate}')
-# print(f'Max Drawdown: {max_drawdown}')
-# print(f'Average Risk/Reward: {average_risk_reward}')
-
-# Create a dictionary with stats
-stats = {'Total return': total_return * 100,
-         'Positive return': positive_return * 100,
-         'Negative return': negative_return * 100,
-         'Win rate': win_rate * 100,
-         'Max Drawdown': max_drawdown,
-         'Average Risk/Reward': average_risk_reward}
-
-# Convert the dictionary to a pandas DataFrame
-stats_df = pd.DataFrame(list(stats.items()), columns=['Stat', 'Value'])
-
-# Plot stats
-plt.figure(figsize=(10, 6))
-bars = plt.barh(stats_df['Stat'], stats_df['Value'], color='skyblue')
-# Add value annotations to each bar
-for bar in bars:
-    width = bar.get_width() # Get bar width
-    label_y_pos = bar.get_y() + bar.get_height() / 2
-    plt.text(width, label_y_pos, f'{width:.2f}%', va='center')
-
-plt.title('Trading Statistics')
-plt.xlabel('Value (%)')
-plt.ylabel('Statistic')
-plt.grid(axis='x')
-
-
-# Calculate number of winning and losing trades
-n_wins = len(data[data['return'] > 0])
-n_losses = len(data[data['return'] < 0])
-
-# Create a pie chart
-labels = ['Wins', 'Losses']
-sizes = [n_wins, n_losses]
-colors = ['green', 'red']
-explode = (0.1, 0)  # explode 1st slice (i.e., 'Wins')
-
-# Plot
-plt.figure(figsize=(6, 6))
-plt.pie(sizes, explode=explode, labels=labels, colors=colors,
-        autopct='%1.1f%%', shadow=True, startangle=140)
-plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-plt.title('Winning vs Losing Trades')
-
-plt.show()
-
