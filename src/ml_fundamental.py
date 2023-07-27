@@ -14,6 +14,7 @@ from sklearn.metrics import mean_squared_error
 # data = {
 #     'EPS': np.random.normal(5, 1, n),
 #     'PE_Ratio': np.random.normal(20, 5, n),
+#     'PEG_Ratio':np.random.normal(20, 5, n),
 #     'PB_Ratio': np.random.normal(1.5, 0.5, n),
 #     'PS_Ratio': np.random.normal(2.5, 0.5, n),
 #     'Dividend_Yield': np.random.normal(2, 0.5, n),
@@ -35,7 +36,7 @@ from sklearn.metrics import mean_squared_error
 df = pd.read_csv('stock_data.csv')
 
 # Features
-X = df[['EPS', 'PE_Ratio', 'PB_Ratio', 'PS_Ratio', 'Dividend_Yield', 'Market_Cap', 'Debt_Equity_Ratio', 'ROE', 'Current_Ratio', 'Operating_Margin']]
+X = df[['EPS', 'PE_Ratio','PEG_Ratio', 'PB_Ratio', 'PS_Ratio', 'Dividend_Yield', 'Market_Cap', 'Debt_Equity_Ratio', 'ROE', 'Current_Ratio', 'Operating_Margin']]
 # Target variable
 y = df['Stock_Price']
 
@@ -56,7 +57,7 @@ mse = mean_squared_error(y_test, y_pred)
 print(f'Mean Squared Error: {mse}')
 
 # Predict future stock price
-future_stock_data = {'EPS': [5.20], 'PE_Ratio': [15.7], 'PB_Ratio': [1.6], 'PS_Ratio': [2.8], 'Dividend_Yield': [1.5], 'Market_Cap': [50000000000], 'Debt_Equity_Ratio': [0.5], 'ROE': [20], 'Current_Ratio': [1.2], 'Operating_Margin': [25]}
+future_stock_data = {'EPS': [5.20], 'PE_Ratio': [15.7],'PEG_Ratio':[2], 'PB_Ratio': [1.6], 'PS_Ratio': [2.8], 'Dividend_Yield': [1.5], 'Market_Cap': [50000000000], 'Debt_Equity_Ratio': [0.5], 'ROE': [20], 'Current_Ratio': [1.2], 'Operating_Margin': [25]}
 future_stock_df = pd.DataFrame(future_stock_data)
 future_stock_price = model.predict(future_stock_df)
 print(f'Predicted future stock price: {future_stock_price[0]}')
