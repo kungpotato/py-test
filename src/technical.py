@@ -3,14 +3,15 @@ import yfinance as yf
 import ta
 import pandas as pd
 import plotly.graph_objs as go
-
+from scipy.stats import linregress
 
 class StockAnalysis:
-    def __init__(self, tricker, period='1y', interval='1d', indicator='sma'):
+    def __init__(self, tricker, period='max', interval='1d', indicator='sma',risk_free_rate=0.015):
         self.__tricker = tricker
         self.__period = period
         self.__interval = interval
         self.indicator = indicator
+        self.__risk_free_rate = risk_free_rate
         self.__df = self.__get_data()
 
     def __get_data(self):
@@ -43,36 +44,66 @@ class StockAnalysis:
         fig = go.Figure(data=traces, layout=layout)
         fig.show()
 
-    def calc_win_rate_and_RRR(self):
-        df = self.__df
-        buy_prices = df[df['Buy_Signal']]['Close']
-        sell_prices = df[df['Sell_Signal']]['Close']
+    def calculate_returns(self):
+        self.__df['Returns'] = self.__df['Close'].pct_change()
 
-        if len(buy_prices) > len(sell_prices):
-            buy_prices = buy_prices.iloc[:len(sell_prices)]
-        elif len(sell_prices) > len(buy_prices):
-            sell_prices = sell_prices.iloc[:len(buy_prices)]
+    def calculate_sharpe_ratio(self):
+        self.calculate_returns()
+        excess_returns = self.__df['Returns'] - self.__risk_free_rate/252  # Assuming 252 trading days in a year
+        sharpe_ratio = np.sqrt(252) * excess_returns.mean() / excess_returns.std()
+        return sharpe_ratio
 
-        gains = sell_prices.values - buy_prices.values
+    def calculate_max_drawdown(self):
+        self.calculate_returns()
+        rolling_max = self.__df['Returns'].cummax()
+        drawdown = self.__df['Returns'] - rolling_max
+        max_drawdown = drawdown.min()
+        return max_drawdown
 
-        profitable_trades = gains[gains > 0]
-        win_rate = len(profitable_trades) / len(gains)
-        print(f'Win Rate: {win_rate*100:.2f}%')
+    def calculate_win_rate(self):
+        self.__df['Win'] = np.where(self.__df['Returns'] > 0, 1, 0)
+        win_rate = self.__df['Win'].sum() / self.__df.shape[0]
+        return win_rate
 
-        losses = -gains[gains < 0]
-        wins = gains[gains > 0]
+    def calculate_profit_factor(self):
+        gross_profit = self.__df[self.__df['Returns'] > 0]['Returns'].sum()
+        gross_loss = self.__df[self.__df['Returns'] < 0]['Returns'].sum()
+        if gross_loss == 0: return np.inf
+        return gross_profit / gross_loss
 
-        average_loss = losses.mean() if len(losses) > 0 else 0
-        average_gain = wins.mean() if len(wins) > 0 else 0
+    def calculate_avg_profit_per_trade(self):
+        avg_profit_per_trade = self.__df['Returns'].mean()
+        return avg_profit_per_trade
 
-        RRR = average_gain / average_loss if average_loss > 0 else float('inf')
-        print(f'Risk-Reward Ratio: {RRR:.2f}')
+    def calculate_beta(self, benchmark_returns):
+        # Calculate beta compared to a benchmark's returns
+        self.calculate_returns()
+        # Remove NaN values
+        self.__df.dropna(subset=['Returns'], inplace=True)
+        benchmark_returns.dropna(inplace=True)
+        # Perform linear regression
+        beta, alpha, r_value, p_value, std_err = linregress(
+            benchmark_returns.values,
+            self.__df['Returns'].values
+        )
+        return beta
 
 
 def main():
-    my_stock = StockAnalysis('aot.bk')
+    my_stock = StockAnalysis(tricker='sc.bk',period='max',interval='1wk')
     my_stock.sma_plot()
-    my_stock.calc_win_rate_and_RRR()
+    sharpe_ratio = my_stock.calculate_sharpe_ratio()
+    max_drawdown = my_stock.calculate_max_drawdown()
+    win_rate = my_stock.calculate_win_rate()
+    profit_factor = my_stock.calculate_profit_factor()
+    avg_profit_per_trade = my_stock.calculate_avg_profit_per_trade()
+
+    print(f"Sharpe Ratio: {sharpe_ratio}")
+    print(f"Maximum Drawdown: {max_drawdown}")
+    print(f"Win Rate: {win_rate}")
+    print(f"Profit Factor: {profit_factor}")
+    print(f"Average Profit per Trade: {avg_profit_per_trade}")
+
 
 
 if __name__ == "__main__":
