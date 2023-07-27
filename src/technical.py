@@ -4,6 +4,7 @@ import ta
 import pandas as pd
 import plotly.graph_objs as go
 from scipy.stats import linregress
+import matplotlib.pyplot as plt
 
 class StockAnalysis:
     def __init__(self, tricker, period='max', interval='1d', indicator='sma',risk_free_rate=0.015):
@@ -103,6 +104,16 @@ def main():
     print(f"Win Rate: {win_rate}")
     print(f"Profit Factor: {profit_factor}")
     print(f"Average Profit per Trade: {avg_profit_per_trade}")
+
+    # Plotting
+    metrics = ['Sharpe Ratio', 'Maximum Drawdown', 'Win Rate', 'Profit Factor', 'Average Profit per Trade']
+    values = [sharpe_ratio, max_drawdown, win_rate, profit_factor, avg_profit_per_trade]
+
+    fig, ax = plt.subplots()
+    ax.bar(metrics, values, color='blue')
+    plt.xticks(rotation=45)
+    ax.set_title('Stock Analysis Metrics')
+    plt.show()
 
 
 
