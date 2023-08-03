@@ -8,7 +8,7 @@ from logger.log import log_debug
 
 
 def predictPrice(ticker="GBPUSD=X"):
-    data = yf.download(ticker, period="5y", interval="1wk")
+    data = yf.download(ticker, period="1y", interval="1d")
 
     # Compute the target variable
     data = data.copy()
