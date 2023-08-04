@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-from logger.log import log_debug
+from logger.log import log_debug, log_info, log_warning
 import ta
 
 
@@ -29,7 +29,7 @@ def predictPrice(ticker="GBPUSD=X"):
     # Get the new last row
     last_row = data.iloc[-1]
 
-    log_debug(f'================================== {ticker} ==================================')
+    log_warning(f'================================== {ticker} ==================================')
 
     # Print the date of the new last row
     log_debug(f"last date: {last_row.name}")
@@ -94,10 +94,10 @@ def predictPrice(ticker="GBPUSD=X"):
     log_debug(f"Accuracy : {accuracy * 100:.2f}%")
 
     if predicted_close_price > last_close_price:
-        log_debug(
+        log_info(
             f"Predicted to be up. Price: {predicted_close_price}({percentage_change:.2f}%).")
     else:
-        log_debug(
+        log_info(
             f"Predicted to be down. Price: {predicted_close_price} ({percentage_change:.2f}%).")
 
 
