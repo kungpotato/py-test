@@ -6,7 +6,7 @@ __logger.setLevel(logging.DEBUG)
 
 __handler = colorlog.StreamHandler()
 __formatter = colorlog.ColoredFormatter(
-    "%(log_color)s%(levelname)s: %(message)s",
+    "%(log_color)s: %(message)s",
     log_colors={
         'DEBUG': 'blue',
         'INFO': 'green',
