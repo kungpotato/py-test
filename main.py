@@ -80,12 +80,23 @@ def predictPrice(ticker="GBPUSD=X"):
     predicted_close_price = next_candle_prediction[0]
     percentage_change = ((predicted_close_price - last_close_price) / last_close_price) * 100
 
+    # show accuracy
+    # Calculate the actual direction of price change
+    actual_direction = np.sign(y_test[1:] - y_test[:-1])
+    # Calculate the predicted direction of price change
+    predicted_direction = np.sign(y_pred[1:] - y_pred[:-1])
+    # Calculate the number of times the predicted direction matches the actual direction
+    correct_directions = np.sum(predicted_direction == actual_direction)
+    # Calculate accuracy
+    accuracy = correct_directions / len(actual_direction)
+    log_debug(f"Accuracy : {accuracy * 100:.2f}%")
+
     if predicted_close_price > last_close_price:
         log_debug(
-            f"{ticker} ==> Predicted to be up. Price: {predicted_close_price}({percentage_change:.2f}%), Last close price: {last_close_price}.")
+            f"{ticker} ==> Predicted to be up. Price: {predicted_close_price}({percentage_change:.2f}%).")
     else:
         log_debug(
-            f"{ticker} ==> Predicted to be down. Price: {predicted_close_price} ({percentage_change:.2f}%), Last close price: {last_close_price}.")
+            f"{ticker} ==> Predicted to be down. Price: {predicted_close_price} ({percentage_change:.2f}%).")
 
 
 def main():
