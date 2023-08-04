@@ -16,7 +16,7 @@ def calculate_RSI(data, window=14):
     return ta.momentum.RSIIndicator(data['Close'], window).rsi()
 
 
-def predictPrice(ticker="GBPUSD=X"):
+def predictPrice(ticker):
     data = yf.download(ticker, period="1y", interval="1d")
 
     # Compute the target variable
@@ -35,7 +35,7 @@ def predictPrice(ticker="GBPUSD=X"):
     log_debug(f"last date: {last_row.name}")
 
     # Create features based on the previous 3 candles
-    for i in range(1, 4):
+    for i in range(1, 11):
         data[f'Prev_Close_{i}'] = data['Close'].shift(i)
         data[f'Prev_Open_{i}'] = data['Open'].shift(i)
         data[f'Prev_High_{i}'] = data['High'].shift(i)
@@ -50,11 +50,11 @@ def predictPrice(ticker="GBPUSD=X"):
     data = data.dropna()
 
     # Split Data into Train and Test Sets
-    X = data[['Prev_Close_1', 'Prev_Close_2', 'Prev_Close_3',
-              'Prev_Open_1', 'Prev_Open_2', 'Prev_Open_3',
-              'Prev_High_1', 'Prev_High_2', 'Prev_High_3',
-              'Prev_Low_1', 'Prev_Low_2', 'Prev_Low_3',
-              'Prev_Volume_1', 'Prev_Volume_2', 'Prev_Volume_3',
+    X = data[['Prev_Close_1', 'Prev_Close_2', 'Prev_Close_3', 'Prev_Close_4', 'Prev_Close_5', 'Prev_Close_6', 'Prev_Close_7', 'Prev_Close_8', 'Prev_Close_9', 'Prev_Close_10',
+              'Prev_Open_1', 'Prev_Open_2', 'Prev_Open_3', 'Prev_Open_4', 'Prev_Open_5', 'Prev_Open_6', 'Prev_Open_7', 'Prev_Open_8', 'Prev_Open_9', 'Prev_Open_10',
+              'Prev_High_1', 'Prev_High_2', 'Prev_High_3', 'Prev_High_4', 'Prev_High_5', 'Prev_High_6', 'Prev_High_7', 'Prev_High_8', 'Prev_High_9', 'Prev_High_10',
+              'Prev_Low_1', 'Prev_Low_2', 'Prev_Low_3', 'Prev_Low_4', 'Prev_Low_5', 'Prev_Low_6', 'Prev_Low_7', 'Prev_Low_8', 'Prev_Low_9', 'Prev_Low_10',
+              'Prev_Volume_1', 'Prev_Volume_2', 'Prev_Volume_3', 'Prev_Volume_4', 'Prev_Volume_5', 'Prev_Volume_6', 'Prev_Volume_7', 'Prev_Volume_8', 'Prev_Volume_9', 'Prev_Volume_10',
               'SMA', 'RSI']].values
     y = data['Target'].values
 
@@ -65,11 +65,11 @@ def predictPrice(ticker="GBPUSD=X"):
     regr.fit(X_train, y_train)
 
     # Predict the Close Price of the Next Candlestick
-    next_candle_features = data[['Prev_Close_1', 'Prev_Close_2', 'Prev_Close_3',
-                                'Prev_Open_1', 'Prev_Open_2', 'Prev_Open_3',
-                                 'Prev_High_1', 'Prev_High_2', 'Prev_High_3',
-                                 'Prev_Low_1', 'Prev_Low_2', 'Prev_Low_3',
-                                 'Prev_Volume_1', 'Prev_Volume_2', 'Prev_Volume_3',
+    next_candle_features = data[['Prev_Close_1', 'Prev_Close_2', 'Prev_Close_3', 'Prev_Close_4', 'Prev_Close_5', 'Prev_Close_6', 'Prev_Close_7', 'Prev_Close_8', 'Prev_Close_9', 'Prev_Close_10',
+                                 'Prev_Open_1', 'Prev_Open_2', 'Prev_Open_3', 'Prev_Open_4', 'Prev_Open_5', 'Prev_Open_6', 'Prev_Open_7', 'Prev_Open_8', 'Prev_Open_9', 'Prev_Open_10',
+                                 'Prev_High_1', 'Prev_High_2', 'Prev_High_3', 'Prev_High_4', 'Prev_High_5', 'Prev_High_6', 'Prev_High_7', 'Prev_High_8', 'Prev_High_9', 'Prev_High_10',
+                                 'Prev_Low_1', 'Prev_Low_2', 'Prev_Low_3', 'Prev_Low_4', 'Prev_Low_5', 'Prev_Low_6', 'Prev_Low_7', 'Prev_Low_8', 'Prev_Low_9', 'Prev_Low_10',
+                                 'Prev_Volume_1', 'Prev_Volume_2', 'Prev_Volume_3', 'Prev_Volume_4', 'Prev_Volume_5', 'Prev_Volume_6', 'Prev_Volume_7', 'Prev_Volume_8', 'Prev_Volume_9', 'Prev_Volume_10',
                                  'SMA', 'RSI']].iloc[-1:].values
     next_candle_prediction = regr.predict(next_candle_features)
 
