@@ -1,19 +1,30 @@
 import yfinance as yf
-ticker = "GBPUSD=X"
+import pandas as pd
 
-data = yf.download(ticker, period="1y", interval="1d")
+# List of tickers
+tickers = ["GBPUSD=X", "JPY=X", "NZDUSD=X", 'EURUSD=X', 'GBPJPY=X', 'AUDUSD=X']
 
-last_row = data.iloc[-1]
+# Empty DataFrame to store the closing prices
+closing_prices = pd.DataFrame()
 
-# Print the date and close price
-print("Date:", last_row.name)
-print("Close price:", last_row['Close'])
+# Download data for each ticker and store the closing prices
+for ticker in tickers:
+    data = yf.download(ticker, period="1y", interval="1d")
+    closing_prices[ticker] = data['Close']
 
-# Remove the last row
-data = data.iloc[:-1]
+# Compute the correlation matrix
+correlation_matrix = closing_prices.corr()
 
-# Get the new last row
-new_last_row = data.iloc[-1]
+# Unstack the matrix and sort by correlation
+correlations = correlation_matrix.unstack().sort_values(ascending=False)
 
-# Print the date of the new last row
-print("New last date:", new_last_row.name)
+# Remove self-correlations (correlation of a ticker with itself is always 1)
+correlations = correlations[correlations != 1]
+
+# Remove duplicate pairs
+correlations = correlations.iloc[::2]
+
+# Print pairs of tickers from most to least correlated
+print("Pairs of tickers from most to least correlated:")
+for pair, correlation in correlations.items():
+    print(f"{pair}: {correlation}")

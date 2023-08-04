@@ -29,6 +29,8 @@ def predictPrice(ticker="GBPUSD=X"):
     # Get the new last row
     last_row = data.iloc[-1]
 
+    log_debug(f'================================== {ticker} ==================================')
+
     # Print the date of the new last row
     log_debug(f"last date: {last_row.name}")
 
@@ -74,7 +76,7 @@ def predictPrice(ticker="GBPUSD=X"):
     # Evaluate the model
     y_pred = regr.predict(X_test)
     mse = mean_squared_error(y_test, y_pred)
-    log_debug(f"{ticker} ==> Mean Squared Error on the Test Set: {mse}")
+    log_debug(f"MSE on the Test Set: {mse}")
 
     last_close_price = data['Prev_Close_1'].iloc[-1]
     predicted_close_price = next_candle_prediction[0]
@@ -93,14 +95,14 @@ def predictPrice(ticker="GBPUSD=X"):
 
     if predicted_close_price > last_close_price:
         log_debug(
-            f"{ticker} ==> Predicted to be up. Price: {predicted_close_price}({percentage_change:.2f}%).")
+            f"Predicted to be up. Price: {predicted_close_price}({percentage_change:.2f}%).")
     else:
         log_debug(
-            f"{ticker} ==> Predicted to be down. Price: {predicted_close_price} ({percentage_change:.2f}%).")
+            f"Predicted to be down. Price: {predicted_close_price} ({percentage_change:.2f}%).")
 
 
 def main():
-    tickers = ["GBPUSD=X", "JPY=X", "NZDUSD=X", 'EURUSD=X']
+    tickers = ["GBPUSD=X", "JPY=X", "NZDUSD=X", 'EURUSD=X', 'GBPJPY=X', 'AUDUSD=X']
     for ticker in tickers:
         predictPrice(ticker)
 
