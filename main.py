@@ -5,6 +5,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from logger.log import log_debug
+import ta
+
+
+def calculate_SMA(data, window=10):
+    return data.rolling(window).mean()
+
+
+def calculate_RSI(data, window=14):
+    return ta.momentum.RSIIndicator(data['Close'], window).rsi()
 
 
 def predictPrice(ticker="GBPUSD=X"):
@@ -17,12 +26,23 @@ def predictPrice(ticker="GBPUSD=X"):
     # Drop the last row as it will not have a target
     data = data[:-1].copy()
 
+    # Get the new last row
+    last_row = data.iloc[-1]
+
+    # Print the date of the new last row
+    log_debug(f"last date: {last_row.name}")
+
     # Create features based on the previous 3 candles
     for i in range(1, 4):
         data[f'Prev_Close_{i}'] = data['Close'].shift(i)
         data[f'Prev_Open_{i}'] = data['Open'].shift(i)
         data[f'Prev_High_{i}'] = data['High'].shift(i)
         data[f'Prev_Low_{i}'] = data['Low'].shift(i)
+        data[f'Prev_Volume_{i}'] = data['Volume'].shift(i)
+
+    # Add SMA and RSI features
+    data['SMA'] = calculate_SMA(data['Close'])
+    data['RSI'] = calculate_RSI(data)
 
     # Drop missing values
     data = data.dropna()
@@ -31,7 +51,9 @@ def predictPrice(ticker="GBPUSD=X"):
     X = data[['Prev_Close_1', 'Prev_Close_2', 'Prev_Close_3',
               'Prev_Open_1', 'Prev_Open_2', 'Prev_Open_3',
               'Prev_High_1', 'Prev_High_2', 'Prev_High_3',
-              'Prev_Low_1', 'Prev_Low_2', 'Prev_Low_3']].values
+              'Prev_Low_1', 'Prev_Low_2', 'Prev_Low_3',
+              'Prev_Volume_1', 'Prev_Volume_2', 'Prev_Volume_3',
+              'SMA', 'RSI']].values
     y = data['Target'].values
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -44,7 +66,9 @@ def predictPrice(ticker="GBPUSD=X"):
     next_candle_features = data[['Prev_Close_1', 'Prev_Close_2', 'Prev_Close_3',
                                 'Prev_Open_1', 'Prev_Open_2', 'Prev_Open_3',
                                  'Prev_High_1', 'Prev_High_2', 'Prev_High_3',
-                                 'Prev_Low_1', 'Prev_Low_2', 'Prev_Low_3']].iloc[-1:].values
+                                 'Prev_Low_1', 'Prev_Low_2', 'Prev_Low_3',
+                                 'Prev_Volume_1', 'Prev_Volume_2', 'Prev_Volume_3',
+                                 'SMA', 'RSI']].iloc[-1:].values
     next_candle_prediction = regr.predict(next_candle_features)
 
     # Evaluate the model
