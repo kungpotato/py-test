@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-from logger.log import log_debug, log_info, log_warning
+from logger.log import log_debug, log_info, log_warning, log_error
 import ta
 
 
@@ -97,7 +97,7 @@ def predictPrice(ticker="GBPUSD=X"):
         log_info(
             f"Predicted to be up. Price: {predicted_close_price}({percentage_change:.2f}%).")
     else:
-        log_info(
+        log_error(
             f"Predicted to be down. Price: {predicted_close_price} ({percentage_change:.2f}%).")
 
 
