@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas as pd
 
 # List of tickers
-tickers = ["GBPUSD=X", "JPY=X", "NZDUSD=X", 'EURUSD=X', 'GBPJPY=X', 'AUDUSD=X']
+tickers = ["GBPUSD=X", 'GBPJPY=X', "JPY=X", 'EURUSD=X', "NZDUSD=X", 'AUDUSD=X']
 
 # Empty DataFrame to store the closing prices
 closing_prices = pd.DataFrame()
