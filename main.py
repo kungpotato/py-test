@@ -74,7 +74,7 @@ def predictPrice(ticker):
     data['Target'] = data['Close'].shift(-1)
 
     # Drop the last row as it will not have a target
-    # data = data[:-1].copy()
+    data = data[:-1].copy()
 
     # Get the new last row
     last_row = data.iloc[-1]
